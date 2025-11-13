@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "keywords": [],
-  "author": "",
+  "author": "JijekCom",
   "license": "ISC",
   "lint-staged": {
     "*.js": [
