@@ -1,6 +1,6 @@
 import {classicSequence, domElements, gameState as GameState} from "./state";
 import {isGameSaved, loadSavedGame, saveGame, saveSettings} from "./saveGame";
-import {hideModal, showModal} from "./modals";
+import {hideModal, showAlertModal, showConfirmModal, showModal} from "./modals";
 import {updateResultsTable} from "./results";
 import {renderGrid, startGame} from "./main";
 import {areCellsConnected, showScreen, updateAssistButtons} from "./gameScreen";
@@ -150,7 +150,7 @@ const activateEraser = () => {
         updateAssistButtons();
         playSound('assist');
 
-        alert('Click on any number to remove it. This will use one eraser.');
+        showAlertModal('Click on any number to remove it. This will use one eraser.');
     }
 }
 
@@ -161,7 +161,8 @@ const goBackToMenu = () => {
     }
 
     if (!isGameSaved()) {
-        const confirmLeave = confirm('Your progress is not saved. Are you sure you want to return to the main menu?');
+        const confirmLeave =
+            showConfirmModal('Your progress is not saved. Are you sure you want to return to the main menu?');
         if (!confirmLeave) {
             if (!GameState.gameOver) {
                 startTimer();
@@ -204,11 +205,12 @@ const addNumbersSequentially = (numbers) => {
 }
 
 const addNumbers = () => {
+    if (GameState.grid.length >= 50) {
+        showAlertModal('Grid limit reached! Cannot add more numbers.');
+        return;
+    }
+
     if (GameState.assists.addNumbers.uses < GameState.assists.addNumbers.max) {
-        if (GameState.grid.length >= 50) {
-            alert('Grid limit reached! Cannot add more numbers.');
-            return;
-        }
 
         GameState.assists.addNumbers.uses++;
 
@@ -239,10 +241,14 @@ const addNumbers = () => {
         updateAssistButtons();
         renderGrid();
         playSound('assist');
+
+        if (GameState.grid.length >= 50) {
+            showAlertModal('Grid limit reached! This was the last set of numbers you can add.');
+        }
     }
 }
 
-export const setupEventListeners = () => {
+export const setupEventListeners = async () => {
     Object.values(domElements.modeButtons).forEach(button => {
         button.addEventListener('click', (e) => {
             const mode = e.target.dataset.mode;
@@ -267,8 +273,9 @@ export const setupEventListeners = () => {
         showModal('results');
     });
 
-    domElements.controlButtons.reset.addEventListener('click', () => {
-        if (confirm('Are you sure you want to reset the game?')) {
+    domElements.controlButtons.reset.addEventListener('click', async () => {
+        const confirmed = await showConfirmModal('Are you sure you want to reset the game?');
+        if (confirmed) {
             startGame(GameState.currentMode);
         }
     });

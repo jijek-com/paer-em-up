@@ -1,4 +1,5 @@
 import {domElements, gameState as GameState} from "./state";
+import {showScreen} from "./gameScreen";
 
 export const buildResultsScreen = () => {
     const resultsScreen = domElements.screens.results;
@@ -23,7 +24,28 @@ export const updateResultsTable = () => {
 
     tableBody.innerHTML = '';
 
-    GameState.results.forEach(result => {
+    const timeToSeconds = (timeStr) => {
+        const [minutes, seconds] = timeStr.split(':').map(Number);
+        return minutes * 60 + seconds;
+    };
+
+    const sortByTime = (results) => {
+        return [...results].sort((a, b) => timeToSeconds(a.time) - timeToSeconds(b.time)).slice(0, 5);
+    };
+
+    const createHeaderRow = (text) => {
+        const headerRow = document.createElement('tr');
+        const headerCell = document.createElement('td');
+        headerCell.colSpan = 4;
+        headerCell.textContent = text;
+        headerCell.style.fontWeight = 'bold';
+        headerCell.style.textAlign = 'center';
+        headerCell.style.backgroundColor = 'var(--cell-border)';
+        headerRow.appendChild(headerCell);
+        return headerRow;
+    };
+
+    const createResultRow = (result, isWin) => {
         const row = document.createElement('tr');
 
         const modeCell = document.createElement('td');
@@ -39,12 +61,30 @@ export const updateResultsTable = () => {
         row.appendChild(timeCell);
 
         const resultCell = document.createElement('td');
-        resultCell.textContent = result.win ? 'Win' : 'Loss';
-        if (result.win) {
-            resultCell.classList.add('win-indicator');
-        }
+        resultCell.textContent = isWin ? 'Win' : 'Loss';
+        resultCell.className = isWin ? 'win-indicator' : 'loss-indicator';
         row.appendChild(resultCell);
 
-        tableBody.appendChild(row);
-    });
-}
+        return row;
+    };
+
+    const wins = GameState.results.filter(result => result.win);
+    const losses = GameState.results.filter(result => !result.win);
+
+    const sortedWins = sortByTime(wins);
+    const sortedLosses = sortByTime(losses);
+
+    if (sortedWins.length > 0) {
+        tableBody.appendChild(createHeaderRow('Победы'));
+        sortedWins.forEach(result => {
+            tableBody.appendChild(createResultRow(result, true));
+        });
+    }
+
+    if (sortedLosses.length > 0) {
+        tableBody.appendChild(createHeaderRow('Проигрыши'));
+        sortedLosses.forEach(result => {
+            tableBody.appendChild(createResultRow(result, false));
+        });
+    }
+};

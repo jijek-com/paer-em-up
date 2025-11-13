@@ -4,6 +4,7 @@ import {playSound} from "./audio";
 import {startTimer} from "./timer";
 import {updateGameUI} from "./ui";
 import {renderGrid} from "./main";
+import {showAlertModal} from "./modals";
 
 export const saveSettings = () => {
     localStorage.setItem('pairEmUp_settings', JSON.stringify(GameState.settings));
@@ -93,7 +94,7 @@ export const saveGame = () => {
     };
 
     localStorage.setItem('pairEmUp_savedGame', JSON.stringify(gameState));
-    alert('Game saved successfully!');
+    showAlertModal('Game saved successfully!');
     playSound('assist');
 }
 

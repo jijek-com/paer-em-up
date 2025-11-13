@@ -2,7 +2,7 @@ import { classicSequence, domElements, gameState as GameState } from "./state";
 
 import { createDOMStructure } from "./createDom";
 import { loadSavedState} from "./saveGame";
-import { handleCellClick } from "./gameScreen";
+import {handleCellClick, showScreen} from "./gameScreen";
 
 import { applyTheme } from "./theme";
 import { setupEventListeners, shuffleArray } from "./events";
@@ -98,15 +98,6 @@ const initializeGrid = (mode) => {
     GameState.totalCellsAdded = 27;
 
     renderGrid();
-}
-
-const showScreen = (screenName) => {
-    Object.values(domElements.screens).forEach(screen => {
-        screen.classList.remove('active');
-    });
-
-    domElements.screens[screenName].classList.add('active');
-    GameState.currentScreen = screenName;
 }
 
 export const startGame = (mode) => {

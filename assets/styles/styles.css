@@ -351,7 +351,7 @@ body {
 }
 
 .results-table th, .results-table td {
-    padding: 10px;
+    padding: 5px;
     text-align: center;
     border-bottom: 1px solid var(--cell-border);
 }
@@ -452,4 +452,29 @@ body {
     0% { transform: scale(1); }
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
+}
+
+.loss-indicator {
+    color: var(--secondary-color);
+    font-weight: bold;
+}
+
+.win-indicator {
+    color: var(--success-color);
+    font-weight: bold;
+}
+
+.confirm-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.confirm-yes {
+    background-color: var(--secondary-color);
+}
+
+.confirm-no {
+    background-color: var(--secondary-color);
 }

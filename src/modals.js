@@ -1,8 +1,8 @@
-import {domElements, gameState as states, gameState as GameState} from "./state";
-import {showScreen} from "./gameScreen";
-import {switchTheme} from "./theme";
-import {startGame} from "./main";
-import {updateResultsTable} from "./results";
+import {domElements, gameState, gameState as GameState} from "./state";
+import { showScreen } from "./gameScreen";
+import { switchTheme } from "./theme";
+import { startGame } from "./main";
+import { updateResultsTable } from "./results";
 
 export const showModal = (modalName) => {
     const modal = document.getElementById(`${modalName}-modal`);
@@ -18,29 +18,78 @@ export const hideModal = (modalName) => {
     }
 }
 
-export const createModals = () => {
-    domElements.settingsModal = document.createElement('div');
-    domElements.settingsModal.className = 'modal';
-    domElements.settingsModal.id = 'settings-modal';
+export const showAlertModal = (message) => {
+    const alertMessage = document.getElementById('alert-message');
+    if (alertMessage) {
+        alertMessage.textContent = message;
+    }
+    showModal('alert');
+}
 
-    const settingsContent = document.createElement('div');
-    settingsContent.className = 'modal-content';
+export const showConfirmModal = (message) => {
+    return new Promise((resolve) => {
+        const confirmMessage = document.getElementById('confirm-message');
+        if (confirmMessage) {
+            confirmMessage.textContent = message;
+        }
 
-    const settingsHeader = document.createElement('div');
-    settingsHeader.className = 'modal-header';
+        const confirmYes = document.getElementById('confirm-yes');
+        const confirmNo = document.getElementById('confirm-no');
 
-    const settingsTitle = document.createElement('div');
-    settingsTitle.className = 'modal-title';
-    settingsTitle.textContent = 'Settings';
-    settingsHeader.appendChild(settingsTitle);
+        const cleanup = () => {
+            confirmYes.removeEventListener('click', onYes);
+            confirmNo.removeEventListener('click', onNo);
+            hideModal('confirm');
+        };
 
-    const closeSettings = document.createElement('button');
-    closeSettings.className = 'close-modal';
-    closeSettings.innerHTML = '&times;';
-    closeSettings.addEventListener('click', () => hideModal('settings'));
-    settingsHeader.appendChild(closeSettings);
+        const onYes = () => {
+            cleanup();
+            resolve(true);
+        };
 
-    settingsContent.appendChild(settingsHeader);
+        const onNo = () => {
+            cleanup();
+            resolve(false);
+        };
+
+        confirmYes.addEventListener('click', onYes);
+        confirmNo.addEventListener('click', onNo);
+
+        showModal('confirm');
+    });
+}
+
+const createModalBase = (id, title) => {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = `${id}-modal`;
+
+    const content = document.createElement('div');
+    content.className = 'modal-content';
+
+    const header = document.createElement('div');
+    header.className = 'modal-header';
+
+    const titleElement = document.createElement('div');
+    titleElement.className = 'modal-title';
+    titleElement.textContent = title;
+
+    const closeButton = document.createElement('button');
+    closeButton.className = 'close-modal';
+    closeButton.innerHTML = '&times;';
+    closeButton.addEventListener('click', () => hideModal(id));
+
+    header.appendChild(titleElement);
+    header.appendChild(closeButton);
+    content.appendChild(header);
+
+    modal.appendChild(content);
+
+    return { modal, content };
+};
+
+const createSettingsModal = () => {
+    const { modal, content } = createModalBase('settings', 'Settings');
 
     const audioSetting = document.createElement('div');
     audioSetting.className = 'settings-option';
@@ -54,8 +103,7 @@ export const createModals = () => {
     audioLabel.appendChild(audioCheckbox);
     audioLabel.appendChild(document.createTextNode('Enable Sound Effects'));
     audioSetting.appendChild(audioLabel);
-
-    settingsContent.appendChild(audioSetting);
+    content.appendChild(audioSetting);
 
     const themeSetting = document.createElement('div');
     themeSetting.className = 'settings-option';
@@ -67,16 +115,16 @@ export const createModals = () => {
     const themeSelector = document.createElement('div');
     themeSelector.className = 'theme-selector';
 
-    const currentTheme = states.settings.theme || 'light';
+    const currentTheme = gameState.settings.theme || 'light';
 
     const lightThemeBtn = document.createElement('button');
-    lightThemeBtn.className = 'theme-btn' + (currentTheme === 'light' ? ' active' : '');
+    lightThemeBtn.className = `theme-btn ${currentTheme === 'light' ? 'active' : ''}`;
     lightThemeBtn.textContent = 'Light';
     lightThemeBtn.dataset.theme = 'light';
     lightThemeBtn.addEventListener('click', () => switchTheme('light'));
 
     const darkThemeBtn = document.createElement('button');
-    darkThemeBtn.className = 'theme-btn' + (currentTheme === 'light' ? '' : ' active');
+    darkThemeBtn.className = `theme-btn ${currentTheme === 'dark' ? 'active' : ''}`;
     darkThemeBtn.textContent = 'Dark';
     darkThemeBtn.dataset.theme = 'dark';
     darkThemeBtn.addEventListener('click', () => switchTheme('dark'));
@@ -84,34 +132,13 @@ export const createModals = () => {
     themeSelector.appendChild(lightThemeBtn);
     themeSelector.appendChild(darkThemeBtn);
     themeSetting.appendChild(themeSelector);
+    content.appendChild(themeSetting);
 
-    settingsContent.appendChild(themeSetting);
+    return modal;
+};
 
-    domElements.settingsModal.appendChild(settingsContent);
-    document.body.appendChild(domElements.settingsModal);
-
-    domElements.resultsModal = document.createElement('div');
-    domElements.resultsModal.className = 'modal';
-    domElements.resultsModal.id = 'results-modal';
-
-    const resultsContent = document.createElement('div');
-    resultsContent.className = 'modal-content';
-
-    const resultsHeader = document.createElement('div');
-    resultsHeader.className = 'modal-header';
-
-    const resultsTitle = document.createElement('div');
-    resultsTitle.className = 'modal-title';
-    resultsTitle.textContent = 'Game Results';
-    resultsHeader.appendChild(resultsTitle);
-
-    const closeResults = document.createElement('button');
-    closeResults.className = 'close-modal';
-    closeResults.innerHTML = '&times;';
-    closeResults.addEventListener('click', () => hideModal('results'));
-    resultsHeader.appendChild(closeResults);
-
-    resultsContent.appendChild(resultsHeader);
+const createResultsModal = () => {
+    const { modal, content } = createModalBase('results', 'Game Results');
 
     const resultsTable = document.createElement('table');
     resultsTable.className = 'results-table';
@@ -124,83 +151,118 @@ export const createModals = () => {
         th.textContent = headerText;
         headerRow.appendChild(th);
     });
-    
+
     tableHeader.appendChild(headerRow);
     resultsTable.appendChild(tableHeader);
 
     const tableBody = document.createElement('tbody');
     resultsTable.appendChild(tableBody);
+    content.appendChild(resultsTable);
 
-    resultsContent.appendChild(resultsTable);
-    domElements.resultsModal.appendChild(resultsContent);
-    document.body.appendChild(domElements.resultsModal);
+    return modal;
+};
 
-    domElements.outcomeModal = document.createElement('div');
-    domElements.outcomeModal.className = 'modal';
-    domElements.outcomeModal.id = 'outcome-modal';
-
-    const outcomeContent = document.createElement('div');
-    outcomeContent.className = 'modal-content';
-
-    const outcomeHeader = document.createElement('div');
-    outcomeHeader.className = 'modal-header';
-
-    const outcomeTitle = document.createElement('div');
-    outcomeTitle.className = 'modal-title';
-    outcomeTitle.textContent = 'Game';
-    outcomeHeader.appendChild(outcomeTitle);
-
-    const closeOutcome = document.createElement('button');
-    closeOutcome.className = 'close-modal';
-    closeOutcome.innerHTML = '&times;';
-    closeOutcome.addEventListener('click', () => hideModal('outcome'));
-    outcomeHeader.appendChild(closeOutcome);
-
-    outcomeContent.appendChild(outcomeHeader);
+const createOutcomeModal = () => {
+    const { modal, content } = createModalBase('outcome', 'Game');
 
     const outcomeMessage = document.createElement('div');
     outcomeMessage.className = 'outcome-message';
     outcomeMessage.id = 'outcome-message';
-    outcomeContent.appendChild(outcomeMessage);
+    content.appendChild(outcomeMessage);
 
     const outcomeDetails = document.createElement('div');
     outcomeDetails.className = 'outcome-details';
     outcomeDetails.id = 'outcome-details';
-    outcomeContent.appendChild(outcomeDetails);
+    content.appendChild(outcomeDetails);
 
     const postGameOptions = document.createElement('div');
     postGameOptions.className = 'post-game-options';
 
-    const playAgainBtn = document.createElement('button');
-    playAgainBtn.className = 'control-btn';
-    playAgainBtn.textContent = 'Play Again';
-    playAgainBtn.addEventListener('click', () => {
+    const createActionButton = (text, onClick) => {
+        const button = document.createElement('button');
+        button.className = 'control-btn';
+        button.textContent = text;
+        button.addEventListener('click', onClick);
+        return button;
+    };
+
+    postGameOptions.appendChild(createActionButton('Play Again', () => {
         hideModal('outcome');
         startGame(GameState.currentMode);
-    });
+    }));
 
-    const mainMenuBtn = document.createElement('button');
-    mainMenuBtn.className = 'control-btn';
-    mainMenuBtn.textContent = 'Main Menu';
-    mainMenuBtn.addEventListener('click', () => {
+    postGameOptions.appendChild(createActionButton('Main Menu', () => {
         hideModal('outcome');
         showScreen('start');
-    });
+    }));
 
-    const viewResultsBtn = document.createElement('button');
-    viewResultsBtn.className = 'control-btn';
-    viewResultsBtn.textContent = 'View Results';
-    viewResultsBtn.addEventListener('click', () => {
+    postGameOptions.appendChild(createActionButton('View Results', () => {
         hideModal('outcome');
         updateResultsTable();
         showModal('results');
+    }));
+
+    content.appendChild(postGameOptions);
+
+    return modal;
+};
+
+const createAlertModal = () => {
+    const { modal, content } = createModalBase('alert', 'Information');
+
+    const alertMessage = document.createElement('div');
+    alertMessage.className = 'alert-message';
+    alertMessage.id = 'alert-message';
+    content.appendChild(alertMessage);
+
+    const alertButton = document.createElement('button');
+    alertButton.className = 'control-btn';
+    alertButton.textContent = 'OK';
+    alertButton.addEventListener('click', () => hideModal('alert'));
+    content.appendChild(alertButton);
+
+    return modal;
+};
+
+const createConfirmModal = () => {
+    const { modal, content } = createModalBase('confirm', 'Confirmation');
+
+    const confirmMessage = document.createElement('div');
+    confirmMessage.className = 'confirm-message';
+    confirmMessage.id = 'confirm-message';
+    content.appendChild(confirmMessage);
+
+    const confirmButtons = document.createElement('div');
+    confirmButtons.className = 'confirm-buttons';
+
+    const confirmYes = document.createElement('button');
+    confirmYes.className = 'control-btn confirm-yes';
+    confirmYes.textContent = 'Yes';
+    confirmYes.id = 'confirm-yes';
+
+    const confirmNo = document.createElement('button');
+    confirmNo.className = 'control-btn confirm-no';
+    confirmNo.textContent = 'No';
+    confirmNo.id = 'confirm-no';
+
+    confirmButtons.appendChild(confirmYes);
+    confirmButtons.appendChild(confirmNo);
+    content.appendChild(confirmButtons);
+
+    return modal;
+};
+
+export const createModals = () => {
+    const modals = [
+        { name: 'settings', creator: createSettingsModal },
+        { name: 'results', creator: createResultsModal },
+        { name: 'outcome', creator: createOutcomeModal },
+        { name: 'alert', creator: createAlertModal },
+        { name: 'confirm', creator: createConfirmModal }
+    ];
+
+    modals.forEach(({ name, creator }) => {
+        domElements[`${name}Modal`] = creator();
+        document.body.appendChild(domElements[`${name}Modal`]);
     });
-
-    postGameOptions.appendChild(playAgainBtn);
-    postGameOptions.appendChild(mainMenuBtn);
-    postGameOptions.appendChild(viewResultsBtn);
-
-    outcomeContent.appendChild(postGameOptions);
-    domElements.outcomeModal.appendChild(outcomeContent);
-    document.body.appendChild(domElements.outcomeModal);
-}
+};
